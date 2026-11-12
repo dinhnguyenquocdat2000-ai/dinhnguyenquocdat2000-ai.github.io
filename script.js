@@ -380,3 +380,78 @@ document.querySelectorAll(".modal").forEach(modal => {
 // HIỂN THỊ 50 SẢN PHẨM
 renderProducts();
 renderCart();
+
+// ========================================
+// THÊM 50 LAPTOP CAO CẤP (50 - 100 TRIỆU)
+// ========================================
+
+// ASUS - 10 sản phẩm
+addBrand("ASUS", [
+  ["ASUS ROG Zephyrus G16", 55.9, "Core Ultra 9 285H", "32GB", "1TB SSD", "RTX 5070", "16 inch OLED 240Hz", "1.85kg"],
+  ["ASUS ROG Strix SCAR 16", 89.9, "Core Ultra 9 275HX", "32GB", "2TB SSD", "RTX 5080", "16 inch Mini LED", "2.5kg"],
+  ["ASUS ROG Zephyrus G14", 59.9, "Ryzen AI 9 HX 370", "32GB", "1TB SSD", "RTX 5070", "14 inch OLED", "1.5kg"],
+  ["ASUS ProArt P16", 79.9, "Ryzen AI 9 HX 370", "64GB", "2TB SSD", "RTX 5080", "16 inch OLED", "1.85kg"],
+  ["ASUS ROG Flow Z13", 54.9, "Ryzen AI MAX+ 395", "32GB", "1TB SSD", "Radeon 8060S", "13.4 inch 180Hz", "1.2kg"],
+  ["ASUS ROG Strix G18", 69.9, "Core Ultra 9 275HX", "32GB", "1TB SSD", "RTX 5070 Ti", "18 inch 240Hz", "3kg"],
+  ["ASUS ROG Zephyrus Duo", 99.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5090", "16 inch OLED", "2.8kg"],
+  ["ASUS Zenbook Pro 16X", 69.9, "Core Ultra 9", "32GB", "2TB SSD", "RTX 5070", "16 inch OLED", "2kg"],
+  ["ASUS ROG Strix SCAR 18", 95.9, "Core Ultra 9 275HX", "64GB", "2TB SSD", "RTX 5090", "18 inch 240Hz", "3.3kg"],
+  ["ASUS ROG Zephyrus M16", 64.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070 Ti", "16 inch OLED", "2kg"]
+]);
+
+// ACER - 10 sản phẩm
+addBrand("Acer", [
+  ["Acer Predator Helios 16 AI", 59.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070 Ti", "16 inch OLED", "2.6kg"],
+  ["Acer Predator Helios 18", 89.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5080", "18 inch 240Hz", "3.2kg"],
+  ["Acer Predator Triton 17X", 69.9, "Core i9", "32GB", "2TB SSD", "RTX 4090", "17 inch Mini LED", "3kg"],
+  ["Acer Predator Helios Neo 18", 55.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "18 inch 240Hz", "3kg"],
+  ["Acer Predator Triton Neo 16", 64.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070 Ti", "16 inch OLED", "2.1kg"],
+  ["Acer ConceptD 7 Ezel", 79.9, "Core i9", "32GB", "2TB SSD", "RTX 4080", "15.6 inch 4K", "2.5kg"],
+  ["Acer Predator Helios 16", 74.9, "Core Ultra 9", "32GB", "2TB SSD", "RTX 5080", "16 inch 240Hz", "2.6kg"],
+  ["Acer Swift X 16 Pro", 52.9, "Ryzen AI 9", "32GB", "1TB SSD", "RTX 5070", "16 inch OLED", "1.9kg"],
+  ["Acer Predator Helios 18 AI", 96.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5090", "18 inch Mini LED", "3.3kg"],
+  ["Acer Predator Triton 16", 57.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16 inch OLED", "2.2kg"]
+]);
+
+// LENOVO - 10 sản phẩm
+addBrand("Lenovo", [
+  ["Lenovo Legion Pro 7i", 69.9, "Core Ultra 9 275HX", "32GB", "1TB SSD", "RTX 5080", "16 inch OLED", "2.6kg"],
+  ["Lenovo Legion 9i", 99.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5090", "16 inch Mini LED", "2.8kg"],
+  ["Lenovo ThinkPad P1 Gen 7", 75.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch OLED", "1.8kg"],
+  ["Lenovo ThinkPad P16 Gen 3", 89.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch 4K", "2.9kg"],
+  ["Lenovo Yoga Pro 9i", 59.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16 inch Mini LED", "2kg"],
+  ["Lenovo Legion Pro 7", 79.9, "Ryzen 9", "32GB", "2TB SSD", "RTX 5080", "16 inch OLED", "2.7kg"],
+  ["Lenovo ThinkPad X1 Extreme", 64.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16 inch OLED", "1.9kg"],
+  ["Lenovo ThinkPad P16s", 52.9, "Core Ultra 7", "32GB", "1TB SSD", "RTX 500 Ada", "16 inch WQXGA", "1.8kg"],
+  ["Lenovo Legion 9", 94.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5090", "16 inch Mini LED", "2.8kg"],
+  ["Lenovo Yoga Pro 9", 56.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16 inch OLED", "2kg"]
+]);
+
+// HP - 10 sản phẩm
+addBrand("HP", [
+  ["HP ZBook Fury 16 G11", 89.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch 4K", "2.4kg"],
+  ["HP ZBook Studio 16 G11", 69.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 4000 Ada", "16 inch OLED", "1.8kg"],
+  ["HP Omen Max 16", 79.9, "Core Ultra 9", "32GB", "2TB SSD", "RTX 5080", "16 inch OLED", "2.4kg"],
+  ["HP Omen Transcend 14", 55.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "14 inch OLED", "1.6kg"],
+  ["HP ZBook Power 16", 54.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 3000 Ada", "16 inch WUXGA", "2kg"],
+  ["HP EliteBook X G1i", 52.9, "Core Ultra 7", "32GB", "1TB SSD", "Intel Graphics", "14 inch OLED", "1.4kg"],
+  ["HP ZBook Fury 18", 99.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "18 inch 4K", "3kg"],
+  ["HP Omen 17", 64.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070 Ti", "17.3 inch 240Hz", "2.8kg"],
+  ["HP Spectre x360 16", 59.9, "Core Ultra 9", "32GB", "2TB SSD", "RTX 5070", "16 inch OLED", "2kg"],
+  ["HP ZBook Studio G11", 74.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 4000 Ada", "16 inch OLED", "1.8kg"]
+]);
+
+// DELL - 10 sản phẩm
+addBrand("DELL", [
+  ["Dell Alienware Area-51", 99.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5090", "18 inch 240Hz", "3.5kg"],
+  ["Dell Alienware m18 R2", 89.9, "Core i9", "64GB", "2TB SSD", "RTX 4090", "18 inch 165Hz", "4kg"],
+  ["Dell Precision 5690", 79.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch OLED", "2.1kg"],
+  ["Dell Precision 7680", 95.9, "Core i9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch UHD+", "2.6kg"],
+  ["Dell Alienware x16 R2", 69.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070 Ti", "16 inch QHD+", "2.7kg"],
+  ["Dell XPS 16", 59.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16.3 inch OLED", "2.1kg"],
+  ["Dell Precision 7780", 89.9, "Core i9", "64GB", "2TB SSD", "RTX 5000 Ada", "17 inch UHD+", "3kg"],
+  ["Dell Alienware m16 R2", 64.9, "Core Ultra 9", "32GB", "1TB SSD", "RTX 5070", "16 inch QHD+", "2.6kg"],
+  ["Dell Precision 5690 OLED", 84.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5000 Ada", "16 inch OLED", "2.1kg"],
+  ["Dell Alienware 18", 94.9, "Core Ultra 9", "64GB", "2TB SSD", "RTX 5080", "18 inch 240Hz", "3.5kg"]
+]);
+
