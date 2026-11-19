@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đạt Translate - Hỗ Trợ Dịch Thuật Với 249 Ngôn Ngữ Chính Xác</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        /* Hiệu ứng sóng âm khi thu âm micro */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.85);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
+            }
+            100% {
+                transform: scale(0.85);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+        .mic-recording {
+            animation: pulse-ring 1.5s infinite;
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+        /* Hiệu ứng sóng âm thanh khi chị Google đang đọc */
+        @keyframes speaking-wave {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.18); color: #1a73e8; }
+        }
+        .speaking-active {
+            animation: speaking-wave 0.8s infinite ease-in-out;
+            background-color: #e8f0fe !important;
+            color: #1a73e8 !important;
+        }
+        /* Tùy chỉnh thanh cuộn */
+        textarea::-webkit-scrollbar, #outputText::-webkit-scrollbar, .lang-list-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        textarea::-webkit-scrollbar-thumb, #outputText::-webkit-scrollbar-thumb, .lang-list-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-gray-800">
+
+    <!-- Header giống Google Dịch -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-language text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-800 tracking-tight">
+                        <span class="text-blue-600 font-bold">Đạt</span> Translate
+                    </h1>
+                    <p class="text-xs text-gray-500 hidden sm:block">Hỗ Trợ Dịch Thuật Với 249 Ngôn Ngữ Chính Xác</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    <i class="fa-solid fa-microphone-lines mr-1.5"></i> Nhận diện giọng nói
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        
+        <!-- Thông báo trạng thái (Toast Notification) -->
+        <div id="toastBox" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+            <div class="bg-gray-900 text-white px-4 py-3 rounded-xl shadow-lg flex items-center space-x-3 text-sm font-medium">
+                <i id="toastIcon" class="fa-solid fa-circle-info text-blue-400"></i>
+                <span id="toastMessage">Thông báo</span>
+            </div>
+        </div>
+
+        <!-- Khung Dịch Thuật Chính -->
+        <div class="bg-white rounded-2xl shadow-md border border-gray-200 overflow-visible">
+            
+            <!-- Thanh chọn ngôn ngữ & Đảo chiều (Hỗ trợ 249 ngôn ngữ + Tìm kiếm nhanh) -->
+            <div class="grid grid-cols-1 md:grid-cols-11 items-center border-b border-gray-200 bg-gray-50/70 px-3 py-2.5 gap-2 rounded-t-2xl relative">
+                
+                <!-- Ngôn ngữ nguồn -->
+                <div class="md:col-span-5 relative" id="sourceLangWrapper">
+                    <button type="button" id="sourceLangBtn" class="w-full md:w-auto min-w-[220px] max-w-full flex items-center justify-between space-x-2 bg-transparent hover:bg-gray-200/70 text-blue-600 font-semibold text-sm sm:text-base py-2 px-3.5 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <span id="sourceLangLabel" class="truncate">Tiếng Anh (English)</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-blue-500 flex-shrink-0"></i>
+                    </button>
+                    <!-- Dropdown tìm kiếm 249 ngôn ngữ nguồn -->
+                    <div id="sourceLangDropdown" class="hidden absolute left-0 top-full mt-1.5 w-full sm:w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-40 overflow-hidden">
+                        <div class="p-2.5 border-b border-gray-100 bg-gray-50">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input type="text" id="sourceLangSearch" placeholder="Tìm trong 249 ngôn ngữ..." class="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div id="sourceLangList" class="max-h-72 overflow-y-auto lang-list-scroll divide-y divide-gray-50 text-sm"></div>
+                    </div>
+                </div>
+
+                <!-- Nút đảo chiều ngôn ngữ ở giữa -->
+                <div class="md:col-span-1 flex justify-center">
+                    <button id="swapBtn" title="Hoán đổi ngôn ngữ" class="p-2.5 rounded-full text-gray-600 hover:bg-gray-200 hover:text-blue-600 active:scale-95 transition transform duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <i class="fa-solid fa-right-left text-base"></i>
+                    </button>
+                </div>
+
+                <!-- Ngôn ngữ đích -->
+                <div class="md:col-span-5 relative flex md:justify-end" id="targetLangWrapper">
+                    <button type="button" id="targetLangBtn" class="w-full md:w-auto min-w-[220px] max-w-full flex items-center justify-between space-x-2 bg-transparent hover:bg-gray-200/70 text-blue-600 font-semibold text-sm sm:text-base py-2 px-3.5 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <span id="targetLangLabel" class="truncate">Tiếng Việt</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-blue-500 flex-shrink-0"></i>
+                    </button>
+                    <!-- Dropdown tìm kiếm 249 ngôn ngữ đích -->
+                    <div id="targetLangDropdown" class="hidden absolute right-0 top-full mt-1.5 w-full sm:w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-40 overflow-hidden">
+                        <div class="p-2.5 border-b border-gray-100 bg-gray-50">
+                            <div class="relative">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input type="text" id="targetLangSearch" placeholder="Tìm trong 249 ngôn ngữ..." class="w-full pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                        <div id="targetLangList" class="max-h-72 overflow-y-auto lang-list-scroll divide-y divide-gray-50 text-sm"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khu vực 2 khung song song: Văn bản gốc (Trái) & Bản dịch (Phải) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 rounded-b-2xl overflow-hidden">
+                
+                <!-- KHUNG TRÁI: VĂN BẢN GỐC -->
+                <div class="relative flex flex-col justify-between min-h-[240px] sm:min-h-[290px] p-4 sm:p-5 bg-white">
+                    
+                    <!-- Nút dấu "X" xóa nhanh ở góc trên bên phải -->
+                    <button id="clearBtn" title="Xóa văn bản" class="hidden absolute top-3 right-3 w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 flex items-center justify-center transition z-10 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+
+                    <!-- Ô nhập liệu văn bản -->
+                    <textarea id="inputText" 
+                        placeholder="Nhập văn bản hoặc bấm vào biểu tượng Micro bên dưới để nói..." 
+                        maxlength="5000"
+                        class="w-full flex-grow resize-none border-0 focus:ring-0 focus:outline-none text-lg sm:text-xl text-gray-800 placeholder-gray-400 pr-10 leading-relaxed bg-transparent"></textarea>
+
+                    <!-- Thanh trạng thái đang nghe Micro -->
+                    <div id="recordingStatus" class="hidden items-center space-x-2 text-red-600 text-sm font-medium my-2 bg-red-50 px-3 py-1.5 rounded-lg w-fit">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                        <span>Đang nghe giọng nói của bạn... Hãy nói vào micro</span>
+                    </div>
+
+                    <!-- Thanh công cụ dưới khung trái -->
+                    <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-100">
+                        <div class="flex items-center space-x-2">
+                            <!-- Nút Micro thu âm giọng nói -->
+                            <button id="micBtn" title="Dịch bằng giọng nói (Nói không cần gõ)" class="w-11 h-11 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                <i class="fa-solid fa-microphone text-lg"></i>
+                            </button>
+
+                            <!-- Nút Loa đọc văn bản gốc -->
+                            <button id="speakSourceBtn" title="Nghe văn bản gốc" class="w-11 h-11 rounded-full bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center transition disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-blue-400" disabled>
+                                <i class="fa-solid fa-volume-high text-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Bộ đếm ký tự -->
+                        <div class="text-xs text-gray-400 font-medium">
+                            <span id="charCount">0</span> / 10.000
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KHUNG PHẢI: BẢN DỊCH -->
+                <div class="relative flex flex-col justify-between min-h-[240px] sm:min-h-[290px] p-4 sm:p-5 bg-slate-50/80">
+                    
+                    <!-- Hiển thị kết quả dịch -->
+                    <div class="flex-grow relative">
+                        <div id="outputText" class="w-full h-full text-lg sm:text-xl text-gray-800 leading-relaxed whitespace-pre-wrap break-words">
+                            <span class="text-gray-500 select-none">Bản dịch sẽ hiển thị tại đây...</span>
+                        </div>
+                        
+                        <!-- Loading spinner nhỏ khi đang dịch -->
+                        <div id="loadingIndicator" class="hidden items-center space-x-2 text-blue-600 text-sm mt-2">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            <span>Đang dịch...</span>
+                        </div>
+                    </div>
+
+                    <!-- Thanh công cụ dưới khung phải -->
+                    <div class="flex items-center justify-between pt-3 mt-2 border-t border-gray-200/70">
+                        <div class="flex items-center space-x-2">
+                            <!-- Nút Loa đọc bản dịch ("Giọng chị Google") -->
+                            <button id="speakTargetBtn" title="Nghe bản dịch (Giọng chị Google)" class="w-11 h-11 rounded-full bg-white border border-gray-200 hover:bg-blue-50 text-gray-700 hover:text-blue-600 flex items-center justify-center shadow-sm transition disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-blue-400" disabled>
+                                <i class="fa-solid fa-volume-high text-lg"></i>
+                            </button>
+                            <span id="ttsLabel" class="text-xs text-gray-500 hidden sm:inline">Nghe phát âm</span>
+                        </div>
+
+                        <!-- Nút Sao chép (Copy) bản dịch -->
+                        <button id="copyBtn" title="Sao chép bản dịch" class="px-3.5 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 hover:text-blue-600 text-sm font-medium flex items-center space-x-2 shadow-sm transition disabled:opacity-40 disabled:pointer-events-none focus:outline-none focus:ring-2 focus:ring-blue-400" disabled>
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Sao chép</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Gợi ý nhanh các câu mẫu để người dùng thử nghiệm ngay -->
+        <div class="mt-6">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3">Thử nhanh các câu mẫu:</p>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="sample-btn px-3.5 py-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-700 border border-gray-200 rounded-full text-sm transition shadow-sm" data-src="en" data-tgt="vi" data-text="Hello! How are you doing today?">
+                    "Hello! How are you doing today?" (Anh → Việt)
+                </button>
+                <button type="button" class="sample-btn px-3.5 py-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-700 border border-gray-200 rounded-full text-sm transition shadow-sm" data-src="vi" data-tgt="en" data-text="Xin chào, tôi muốn hỏi đường đến sân bay gần nhất.">
+                    "Xin chào, tôi muốn hỏi đường..." (Việt → Anh)
+                </button>
+                <button type="button" class="sample-btn px-3.5 py-1.5 bg-white hover:bg-blue-50 text-gray-600 hover:text-blue-700 border border-gray-200 rounded-full text-sm transition shadow-sm" data-src="vi" data-tgt="ja" data-text="Rất vui được gặp bạn, chúc bạn một ngày tốt lành!">
+                    "Rất vui được gặp bạn..." (Việt → Nhật)
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-gray-400 border-t border-gray-200 bg-white mt-auto">
+        <div>Ứng dụng hỗ trợ dịch thuật tự động</div>
+        <p class="text-xs text-slate-400 mt-1">© 2026 Copyright By Quốc Đạt FPTU</p>
+    </footer>
+
+    <script>
+        /**
+         * DANH SÁCH ĐẦY ĐỦ 249 NGÔN NGỮ HỖ TRỢ DỊCH THUẬT & PHÁT ÂM CHUẨN
+         */
+        const POPULAR_CODES = ['vi', 'en', 'zh-CN', 'zh-TW', 'ja', 'ko', 'fr', 'de', 'es', 'ru', 'ar', 'hi', 'th', 'lo', 'km', 'id', 'ms'];
+
+        const ALL_LANGUAGES = [
+            // --- 17 NGÔN NGỮ PHỔ BIẾN NHẤT ---
+            { code: 'vi', speech: 'vi-VN', name: 'Tiếng Việt' },
+            { code: 'en', speech: 'en-US', name: 'Tiếng Anh (English)' },
+            { code: 'zh-CN', speech: 'zh-CN', name: 'Tiếng Trung Giản Thể (简体中文)' },
+            { code: 'zh-TW', speech: 'zh-TW', name: 'Tiếng Trung Phồn Thể (繁體中文)' },
+            { code: 'ja', speech: 'ja-JP', name: 'Tiếng Nhật (日本語)' },
+            { code: 'ko', speech: 'ko-KR', name: 'Tiếng Hàn (한국어)' },
+            { code: 'fr', speech: 'fr-FR', name: 'Tiếng Pháp (Français)' },
+            { code: 'de', speech: 'de-DE', name: 'Tiếng Đức (Deutsch)' },
+            { code: 'es', speech: 'es-ES', name: 'Tiếng Tây Ban Nha (Español)' },
+            { code: 'ru', speech: 'ru-RU', name: 'Tiếng Nga (Русский)' },
+            { code: 'ar', speech: 'ar-SA', name: 'Tiếng Ả Rập (العربية)' },
+            { code: 'hi', speech: 'hi-IN', name: 'Tiếng Hindi (हिन्दी)' },
+            { code: 'th', speech: 'th-TH', name: 'Tiếng Thái (ไทย)' },
+            { code: 'lo', speech: 'lo-LA', name: 'Tiếng Lào (ລາວ)' },
+            { code: 'km', speech: 'km-KH', name: 'Tiếng Khmer (ខ្មែរ)' },
+            { code: 'id', speech: 'id-ID', name: 'Tiếng Indonesia' },
+            { code: 'ms', speech: 'ms-MY', name: 'Tiếng Mã Lai (Melayu)' },
+
+            // --- 232 NGÔN NGỮ KHÁC TRÊN TOÀN THẾ GIỚI (TỔNG 249 NGÔN NGỮ) ---
+            { code: 'ab', speech: 'ab', name: 'Tiếng Abkhaz' },
+            { code: 'ace', speech: 'ace', name: 'Tiếng Aceh' },
+            { code: 'ach', speech: 'ach', name: 'Tiếng Acoli' },
+            { code: 'aa', speech: 'aa', name: 'Tiếng Afar' },
+            { code: 'af', speech: 'af-ZA', name: 'Tiếng Afrikaans (Nam Phi)' },
+            { code: 'sq', speech: 'sq-AL', name: 'Tiếng Albania' },
+            { code: 'alz', speech: 'alz', name: 'Tiếng Alur' },
+            { code: 'am', speech: 'am-ET', name: 'Tiếng Amharic' },
+            { code: 'hy', speech: 'hy-AM', name: 'Tiếng Armenia' },
+            { code: 'as', speech: 'as-IN', name: 'Tiếng Assam' },
+            { code: 'av', speech: 'av', name: 'Tiếng Avar' },
+            { code: 'awa', speech: 'awa', name: 'Tiếng Awadhi' },
+            { code: 'ay', speech: 'ay', name: 'Tiếng Aymara' },
+            { code: 'az', speech: 'az-AZ', name: 'Tiếng Azerbaijan' },
+            { code: 'ban', speech: 'ban', name: 'Tiếng Bali' },
+            { code: 'bal', speech: 'bal', name: 'Tiếng Baluchi' },
+            { code: 'bm', speech: 'bm', name: 'Tiếng Bambara' },
+            { code: 'bci', speech: 'bci', name: 'Tiếng Baoulé' },
+            { code: 'ba', speech: 'ba', name: 'Tiếng Bashkir' },
+            { code: 'eu', speech: 'eu-ES', name: 'Tiếng Basque' },
+            { code: 'btx', speech: 'btx', name: 'Tiếng Batak Karo' },
+            { code: 'bts', speech: 'bts', name: 'Tiếng Batak Simalungun' },
+            { code: 'bbc', speech: 'bbc', name: 'Tiếng Batak Toba' },
+            { code: 'be', speech: 'be-BY', name: 'Tiếng Belarus' },
+            { code: 'bem', speech: 'bem', name: 'Tiếng Bemba' },
+            { code: 'bn', speech: 'bn-BD', name: 'Tiếng Bengal (বাংলা)' },
+            { code: 'bew', speech: 'bew', name: 'Tiếng Betawi' },
+            { code: 'bho', speech: 'bho', name: 'Tiếng Bhojpuri' },
+            { code: 'bik', speech: 'bik', name: 'Tiếng Bikol' },
+            { code: 'bs', speech: 'bs-BA', name: 'Tiếng Bosnia' },
+            { code: 'br', speech: 'br-FR', name: 'Tiếng Breton' },
+            { code: 'bg', speech: 'bg-BG', name: 'Tiếng Bulgaria' },
+            { code: 'bua', speech: 'bua', name: 'Tiếng Buryat' },
+            { code: 'yue', speech: 'zh-HK', name: 'Tiếng Quảng Đông (粵語)' },
+            { code: 'ca', speech: 'ca-ES', name: 'Tiếng Catalan' },
+            { code: 'ceb', speech: 'ceb', name: 'Tiếng Cebuano' },
+            { code: 'ch', speech: 'ch', name: 'Tiếng Chamorro' },
+            { code: 'ce', speech: 'ce', name: 'Tiếng Chechnya' },
+            { code: 'ny', speech: 'ny', name: 'Tiếng Chichewa' },
+            { code: 'chk', speech: 'chk', name: 'Tiếng Chuuk' },
+            { code: 'cv', speech: 'cv', name: 'Tiếng Chuvash' },
+            { code: 'co', speech: 'co-FR', name: 'Tiếng Corsica' },
+            { code: 'crh', speech: 'crh', name: 'Tiếng Tatar Krym (Kirin)' },
+            { code: 'crh-Latn', speech: 'crh', name: 'Tiếng Tatar Krym (Latinh)' },
+            { code: 'hr', speech: 'hr-HR', name: 'Tiếng Croatia' },
+            { code: 'cs', speech: 'cs-CZ', name: 'Tiếng Séc (Čeština)' },
+            { code: 'da', speech: 'da-DK', name: 'Tiếng Đan Mạch (Dansk)' },
+            { code: 'fa-AF', speech: 'fa-AF', name: 'Tiếng Dari' },
+            { code: 'dv', speech: 'dv', name: 'Tiếng Dhivehi' },
+            { code: 'din', speech: 'din', name: 'Tiếng Dinka' },
+            { code: 'doi', speech: 'doi', name: 'Tiếng Dogri' },
+            { code: 'dov', speech: 'dov', name: 'Tiếng Dombe' },
+            { code: 'nl', speech: 'nl-NL', name: 'Tiếng Hà Lan (Nederlands)' },
+            { code: 'dyu', speech: 'dyu', name: 'Tiếng Dyula' },
+            { code: 'dz', speech: 'dz', name: 'Tiếng Dzongkha' },
+            { code: 'eo', speech: 'eo', name: 'Tiếng Quốc tế ngữ (Esperanto)' },
+            { code: 'et', speech: 'et-EE', name: 'Tiếng Estonia' },
+            { code: 'ee', speech: 'ee', name: 'Tiếng Ewe' },
+            { code: 'fo', speech: 'fo-FO', name: 'Tiếng Faroe' },
+            { code: 'fj', speech: 'fj', name: 'Tiếng Fiji' },
+            { code: 'tl', speech: 'fil-PH', name: 'Tiếng Filipino (Tagalog)' },
+            { code: 'fi', speech: 'fi-FI', name: 'Tiếng Phần Lan (Suomi)' },
+            { code: 'fon', speech: 'fon', name: 'Tiếng Fon' },
+            { code: 'fr-CA', speech: 'fr-CA', name: 'Tiếng Pháp (Canada)' },
+            { code: 'fy', speech: 'fy-NL', name: 'Tiếng Frisia' },
+            { code: 'fur', speech: 'fur', name: 'Tiếng Friuli' },
+            { code: 'ff', speech: 'ff', name: 'Tiếng Fulani' },
+            { code: 'gaa', speech: 'gaa', name: 'Tiếng Ga' },
+            { code: 'gl', speech: 'gl-ES', name: 'Tiếng Galicia' },
+            { code: 'ka', speech: 'ka-GE', name: 'Tiếng Georgia (ქართული)' },
+            { code: 'el', speech: 'el-GR', name: 'Tiếng Hy Lạp (Ελληνικά)' },
+            { code: 'gn', speech: 'gn', name: 'Tiếng Guarani' },
+            { code: 'gu', speech: 'gu-IN', name: 'Tiếng Gujarat' },
+            { code: 'ht', speech: 'ht', name: 'Tiếng Creole Haiti' },
+            { code: 'cnh', speech: 'cnh', name: 'Tiếng Hakha Chin' },
+            { code: 'ha', speech: 'ha-NG', name: 'Tiếng Hausa' },
+            { code: 'haw', speech: 'haw', name: 'Tiếng Hawaii' },
+            { code: 'iw', speech: 'he-IL', name: 'Tiếng Do Thái (עברית)' },
+            { code: 'hil', speech: 'hil', name: 'Tiếng Hiligaynon' },
+            { code: 'hmn', speech: 'hmn', name: 'Tiếng H’Mông' },
+            { code: 'hu', speech: 'hu-HU', name: 'Tiếng Hungary (Magyar)' },
+            { code: 'hrx', speech: 'hrx', name: 'Tiếng Hunsrik' },
+            { code: 'iba', speech: 'iba', name: 'Tiếng Iban' },
+            { code: 'is', speech: 'is-IS', name: 'Tiếng Iceland' },
+            { code: 'ig', speech: 'ig-NG', name: 'Tiếng Igbo' },
+            { code: 'ilo', speech: 'ilo', name: 'Tiếng Ilocano' },
+            { code: 'iu-Latn', speech: 'iu', name: 'Tiếng Inuktitut (Latinh)' },
+            { code: 'iu', speech: 'iu', name: 'Tiếng Inuktitut (Âm tiết)' },
+            { code: 'ga', speech: 'ga-IE', name: 'Tiếng Ireland (Gaeilge)' },
+            { code: 'it', speech: 'it-IT', name: 'Tiếng Ý (Italiano)' },
+            { code: 'jam', speech: 'jam', name: 'Tiếng Patois Jamaica' },
+            { code: 'jw', speech: 'jv-ID', name: 'Tiếng Java' },
+            { code: 'kac', speech: 'kac', name: 'Tiếng Jingpo' },
+            { code: 'kl', speech: 'kl', name: 'Tiếng Kalaallisut (Greenland)' },
+            { code: 'kn', speech: 'kn-IN', name: 'Tiếng Kannada' },
+            { code: 'kr', speech: 'kr', name: 'Tiếng Kanuri' },
+            { code: 'pam', speech: 'pam', name: 'Tiếng Kapampangan' },
+            { code: 'kk', speech: 'kk-KZ', name: 'Tiếng Kazakh' },
+            { code: 'kha', speech: 'kha', name: 'Tiếng Khasi' },
+            { code: 'cgg', speech: 'cgg', name: 'Tiếng Kiga' },
+            { code: 'kg', speech: 'kg', name: 'Tiếng Kikongo' },
+            { code: 'rw', speech: 'rw-RW', name: 'Tiếng Kinyarwanda' },
+            { code: 'ktu', speech: 'ktu', name: 'Tiếng Kituba' },
+            { code: 'trp', speech: 'trp', name: 'Tiếng Kokborok' },
+            { code: 'kv', speech: 'kv', name: 'Tiếng Komi' },
+            { code: 'gom', speech: 'gom', name: 'Tiếng Konkani' },
+            { code: 'kri', speech: 'kri', name: 'Tiếng Krio' },
+            { code: 'ku', speech: 'ku', name: 'Tiếng Kurd (Kurmanji)' },
+            { code: 'ckb', speech: 'ckb', name: 'Tiếng Kurd (Sorani)' },
+            { code: 'ky', speech: 'ky-KG', name: 'Tiếng Kyrgyz' },
+            { code: 'ltg', speech: 'ltg', name: 'Tiếng Latgalia' },
+            { code: 'la', speech: 'la', name: 'Tiếng Latinh' },
+            { code: 'lv', speech: 'lv-LV', name: 'Tiếng Latvia' },
+            { code: 'lij', speech: 'lij', name: 'Tiếng Liguria' },
+            { code: 'li', speech: 'li', name: 'Tiếng Limburg' },
+            { code: 'ln', speech: 'ln', name: 'Tiếng Lingala' },
+            { code: 'lt', speech: 'lt-LT', name: 'Tiếng Litva' },
+            { code: 'lmo', speech: 'lmo', name: 'Tiếng Lombard' },
+            { code: 'lg', speech: 'lg', name: 'Tiếng Luganda' },
+            { code: 'luo', speech: 'luo', name: 'Tiếng Luo' },
+            { code: 'lb', speech: 'lb-LU', name: 'Tiếng Luxembourg' },
+            { code: 'mk', speech: 'mk-MK', name: 'Tiếng Macedonia' },
+            { code: 'mad', speech: 'mad', name: 'Tiếng Madura' },
+            { code: 'mai', speech: 'mai', name: 'Tiếng Maithili' },
+            { code: 'mak', speech: 'mak', name: 'Tiếng Makassar' },
+            { code: 'mg', speech: 'mg-MG', name: 'Tiếng Malagasy' },
+            { code: 'ms-Arab', speech: 'ms-MY', name: 'Tiếng Mã Lai (Jawi)' },
+            { code: 'ml', speech: 'ml-IN', name: 'Tiếng Malayalam' },
+            { code: 'mt', speech: 'mt-MT', name: 'Tiếng Malta' },
+            { code: 'mam', speech: 'mam', name: 'Tiếng Mam' },
+            { code: 'gv', speech: 'gv', name: 'Tiếng Manx' },
+            { code: 'mi', speech: 'mi-NZ', name: 'Tiếng Maori' },
+            { code: 'mr', speech: 'mr-IN', name: 'Tiếng Marathi' },
+            { code: 'mh', speech: 'mh', name: 'Tiếng Marshall' },
+            { code: 'mwr', speech: 'mwr', name: 'Tiếng Marwadi' },
+            { code: 'mfe', speech: 'mfe', name: 'Tiếng Creole Mauritius' },
+            { code: 'chm', speech: 'chm', name: 'Tiếng Meadow Mari' },
+            { code: 'mni-Mtei', speech: 'mni', name: 'Tiếng Meiteilon (Manipuri)' },
+            { code: 'min', speech: 'min', name: 'Tiếng Minang' },
+            { code: 'lus', speech: 'lus', name: 'Tiếng Mizo' },
+            { code: 'mn', speech: 'mn-MN', name: 'Tiếng Mông Cổ' },
+            { code: 'my', speech: 'my-MM', name: 'Tiếng Myanmar (Miến Điện)' },
+            { code: 'nqo', speech: 'nqo', name: 'Tiếng NKo' },
+            { code: 'nhe', speech: 'nhe', name: 'Tiếng Nahuatl (Đông Huasteca)' },
+            { code: 'ndc-ZW', speech: 'ndc', name: 'Tiếng Ndau' },
+            { code: 'nr', speech: 'nr', name: 'Tiếng Ndebele (Nam)' },
+            { code: 'new', speech: 'new', name: 'Tiếng Nepalbhasa (Newari)' },
+            { code: 'ne', speech: 'ne-NP', name: 'Tiếng Nepal' },
+            { code: 'no', speech: 'no-NO', name: 'Tiếng Na Uy (Norsk)' },
+            { code: 'nus', speech: 'nus', name: 'Tiếng Nuer' },
+            { code: 'oc', speech: 'oc', name: 'Tiếng Occitan' },
+            { code: 'or', speech: 'or-IN', name: 'Tiếng Odia (Oriya)' },
+            { code: 'om', speech: 'om', name: 'Tiếng Oromo' },
+            { code: 'os', speech: 'os', name: 'Tiếng Ossetia' },
+            { code: 'pag', speech: 'pag', name: 'Tiếng Pangasinan' },
+            { code: 'pap', speech: 'pap', name: 'Tiếng Papiamento' },
+            { code: 'ps', speech: 'ps-AF', name: 'Tiếng Pashto' },
+            { code: 'fa', speech: 'fa-IR', name: 'Tiếng Ba Tư (فارسی)' },
+            { code: 'pl', speech: 'pl-PL', name: 'Tiếng Ba Lan (Polski)' },
+            { code: 'pt', speech: 'pt-BR', name: 'Tiếng Bồ Đào Nha (Brazil)' },
+            { code: 'pt-PT', speech: 'pt-PT', name: 'Tiếng Bồ Đào Nha (Bồ Đào Nha)' },
+            { code: 'pa', speech: 'pa-IN', name: 'Tiếng Punjab (Gurmukhi)' },
+            { code: 'pa-Arab', speech: 'pa-PK', name: 'Tiếng Punjab (Shahmukhi)' },
+            { code: 'qu', speech: 'qu', name: 'Tiếng Quechua' },
+            { code: 'kek', speech: 'kek', name: 'Tiếng Qʼeqchiʼ' },
+            { code: 'rom', speech: 'rom', name: 'Tiếng Romani' },
+            { code: 'ro', speech: 'ro-RO', name: 'Tiếng Romania' },
+            { code: 'rn', speech: 'rn', name: 'Tiếng Rundi' },
+            { code: 'se', speech: 'se', name: 'Tiếng Sami (Bắc)' },
+            { code: 'sm', speech: 'sm', name: 'Tiếng Samoa' },
+            { code: 'sg', speech: 'sg', name: 'Tiếng Sango' },
+            { code: 'sa', speech: 'sa-IN', name: 'Tiếng Phạn (Sanskrit)' },
+            { code: 'sat-Latn', speech: 'sat', name: 'Tiếng Santali (Latinh)' },
+            { code: 'sat', speech: 'sat', name: 'Tiếng Santali (Ol Chiki)' },
+            { code: 'gd', speech: 'gd-GB', name: 'Tiếng Gael Scotland' },
+            { code: 'nso', speech: 'nso', name: 'Tiếng Sepedi' },
+            { code: 'sr', speech: 'sr-RS', name: 'Tiếng Serbia' },
+            { code: 'st', speech: 'st', name: 'Tiếng Sesotho' },
+            { code: 'crs', speech: 'crs', name: 'Tiếng Creole Seychelles' },
+            { code: 'shn', speech: 'shn', name: 'Tiếng Shan' },
+            { code: 'sn', speech: 'sn', name: 'Tiếng Shona' },
+            { code: 'scn', speech: 'scn', name: 'Tiếng Sicilia' },
+            { code: 'szl', speech: 'szl', name: 'Tiếng Silesia' },
+            { code: 'sd', speech: 'sd-PK', name: 'Tiếng Sindhi' },
+            { code: 'si', speech: 'si-LK', name: 'Tiếng Sinhala' },
+            { code: 'sk', speech: 'sk-SK', name: 'Tiếng Slovakia' },
+            { code: 'sl', speech: 'sl-SI', name: 'Tiếng Slovenia' },
+            { code: 'so', speech: 'so-SO', name: 'Tiếng Somali' },
+            { code: 'su', speech: 'su-ID', name: 'Tiếng Sunda' },
+            { code: 'sus', speech: 'sus', name: 'Tiếng Susu' },
+            { code: 'sw', speech: 'sw-KE', name: 'Tiếng Swahili' },
+            { code: 'ss', speech: 'ss', name: 'Tiếng Swati' },
+            { code: 'sv', speech: 'sv-SE', name: 'Tiếng Thụy Điển (Svenska)' },
+            { code: 'ty', speech: 'ty', name: 'Tiếng Tahiti' },
+            { code: 'tg', speech: 'tg-TJ', name: 'Tiếng Tajik' },
+            { code: 'ber-Latn', speech: 'ber', name: 'Tiếng Tamazight' },
+            { code: 'ber', speech: 'ber', name: 'Tiếng Tamazight (Tifinagh)' },
+            { code: 'ta', speech: 'ta-IN', name: 'Tiếng Tamil (தமிழ்)' },
+            { code: 'tt', speech: 'tt-RU', name: 'Tiếng Tatar' },
+            { code: 'te', speech: 'te-IN', name: 'Tiếng Telugu' },
+            { code: 'tet', speech: 'tet', name: 'Tiếng Tetum' },
+            { code: 'bo', speech: 'bo', name: 'Tiếng Tây Tạng' },
+            { code: 'ti', speech: 'ti', name: 'Tiếng Tigrinya' },
+            { code: 'tiv', speech: 'tiv', name: 'Tiếng Tiv' },
+            { code: 'tpi', speech: 'tpi', name: 'Tiếng Tok Pisin' },
+            { code: 'to', speech: 'to', name: 'Tiếng Tonga' },
+            { code: 'lua', speech: 'lua', name: 'Tiếng Tshiluba' },
+            { code: 'ts', speech: 'ts', name: 'Tiếng Tsonga' },
+            { code: 'tn', speech: 'tn', name: 'Tiếng Tswana' },
+            { code: 'tcy', speech: 'tcy', name: 'Tiếng Tulu' },
+            { code: 'tum', speech: 'tum', name: 'Tiếng Tumbuka' },
+            { code: 'tr', speech: 'tr-TR', name: 'Tiếng Thổ Nhĩ Kỳ (Türkçe)' },
+            { code: 'tk', speech: 'tk-TM', name: 'Tiếng Turkmen' },
+            { code: 'tyv', speech: 'tyv', name: 'Tiếng Tuva' },
+            { code: 'ak', speech: 'ak', name: 'Tiếng Twi' },
+            { code: 'udm', speech: 'udm', name: 'Tiếng Udmurt' },
+            { code: 'uk', speech: 'uk-UA', name: 'Tiếng Ukraina (Українська)' },
+            { code: 'ur', speech: 'ur-PK', name: 'Tiếng Urdu (اردو)' },
+            { code: 'ug', speech: 'ug', name: 'Tiếng Duy Ngô Nhĩ (Uyghur)' },
+            { code: 'uz', speech: 'uz-UZ', name: 'Tiếng Uzbek' },
+            { code: 've', speech: 've', name: 'Tiếng Venda' },
+            { code: 'vec', speech: 'vec', name: 'Tiếng Venezia' },
+            { code: 'war', speech: 'war', name: 'Tiếng Waray' },
+            { code: 'cy', speech: 'cy-GB', name: 'Tiếng Wales (Cymraeg)' },
+            { code: 'wo', speech: 'wo', name: 'Tiếng Wolof' },
+            { code: 'xh', speech: 'xh-ZA', name: 'Tiếng Xhosa' },
+            { code: 'sah', speech: 'sah', name: 'Tiếng Yakut' },
+            { code: 'yi', speech: 'yi', name: 'Tiếng Yiddish' },
+            { code: 'yo', speech: 'yo-NG', name: 'Tiếng Yoruba' },
+            { code: 'yua', speech: 'yua', name: 'Tiếng Maya Yucatec' },
+            { code: 'zap', speech: 'zap', name: 'Tiếng Zapotec' },
+            { code: 'zu', speech: 'zu-ZA', name: 'Tiếng Zulu' },
+            { code: 'en-GB', speech: 'en-GB', name: 'Tiếng Anh (Vương quốc Anh)' },
+            { code: 'en-AU', speech: 'en-AU', name: 'Tiếng Anh (Úc)' },
+            { code: 'es-MX', speech: 'es-MX', name: 'Tiếng Tây Ban Nha (Mexico)' },
+            { code: 'ar-EG', speech: 'ar-EG', name: 'Tiếng Ả Rập (Ai Cập)' },
+            { code: 'bn-IN', speech: 'bn-IN', name: 'Tiếng Bengal (Ấn Độ)' },
+            { code: 'ta-SG', speech: 'ta-SG', name: 'Tiếng Tamil (Singapore)' },
+            { code: 'fr-CH', speech: 'fr-CH', name: 'Tiếng Pháp (Thụy Sĩ)' },
+            { code: 'de-AT', speech: 'de-AT', name: 'Tiếng Đức (Áo)' },
+            { code: 'de-CH', speech: 'de-CH', name: 'Tiếng Đức (Thụy Sĩ)' },
+            { code: 'it-CH', speech: 'it-CH', name: 'Tiếng Ý (Thụy Sĩ)' },
+            { code: 'nl-BE', speech: 'nl-BE', name: 'Tiếng Hà Lan (Bỉ)' },
+            { code: 'sv-FI', speech: 'sv-FI', name: 'Tiếng Thụy Điển (Phần Lan)' },
+            { code: 'sr-Latn', speech: 'sr-Latn', name: 'Tiếng Serbia (Latinh)' },
+            { code: 'bs-Cyrl', speech: 'bs-Cyrl', name: 'Tiếng Bosnia (Kirin)' },
+            { code: 'uz-Cyrl', speech: 'uz-Cyrl', name: 'Tiếng Uzbek (Kirin)' },
+            { code: 'kk-Latn', speech: 'kk-Latn', name: 'Tiếng Kazakh (Latinh)' },
+            { code: 'tg-Latn', speech: 'tg-Latn', name: 'Tiếng Tajik (Latinh)' },
+            { code: 'mn-Mong', speech: 'mn-Mong', name: 'Tiếng Mông Cổ (Truyền thống)' },
+            { code: 'sd-Deva', speech: 'sd-Deva', name: 'Tiếng Sindhi (Devanagari)' },
+            { code: 'ks', speech: 'ks', name: 'Tiếng Kashmir' },
+            { code: 'ks-Deva', speech: 'ks-Deva', name: 'Tiếng Kashmir (Devanagari)' },
+            { code: 'doi-Arab', speech: 'doi-Arab', name: 'Tiếng Dogri (Ả Rập)' },
+            { code: 'brx', speech: 'brx', name: 'Tiếng Bodo' },
+            { code: 'kok', speech: 'kok', name: 'Tiếng Konkani (Goa)' },
+            { code: 'mag', speech: 'mag', name: 'Tiếng Magahi' },
+            { code: 'bgc', speech: 'bgc', name: 'Tiếng Haryanvi' },
+            { code: 'raj', speech: 'raj', name: 'Tiếng Rajasthan' },
+            { code: 'hne', speech: 'hne', name: 'Tiếng Chhattisgarhi' },
+            { code: 'anp', speech: 'anp', name: 'Tiếng Angika' },
+            { code: 'bns', speech: 'bns', name: 'Tiếng Bundeli' },
+            { code: 'grt', speech: 'grt', name: 'Tiếng Garo' },
+            { code: 'lep', speech: 'lep', name: 'Tiếng Lepcha' },
+            { code: 'lif', speech: 'lif', name: 'Tiếng Limbu' },
+            { code: 'sck', speech: 'sck', name: 'Tiếng Sadri' },
+            { code: 'unr', speech: 'unr', name: 'Tiếng Mundari' },
+            { code: 'hoc', speech: 'hoc', name: 'Tiếng Ho' },
+            { code: 'kru', speech: 'kru', name: 'Tiếng Kurukh' },
+            { code: 'kfy', speech: 'kfy', name: 'Tiếng Kumaoni' },
+            { code: 'gbm', speech: 'gbm', name: 'Tiếng Garhwali' },
+            { code: 'dzo', speech: 'dz', name: 'Tiếng Dzongkha (Bhutan)' },
+            { code: 'tpi-PG', speech: 'tpi', name: 'Tiếng Tok Pisin (Papua New Guinea)' },
+            { code: 'bi', speech: 'bi', name: 'Tiếng Bislama' },
+            { code: 'na', speech: 'na', name: 'Tiếng Nauru' },
+            { code: 'tvl', speech: 'tvl', name: 'Tiếng Tuvalu' },
+            { code: 'gil', speech: 'gil', name: 'Tiếng Gilbert (Kiribati)' },
+            { code: 'niu', speech: 'niu', name: 'Tiếng Niue' },
+            { code: 'tkl', speech: 'tkl', name: 'Tiếng Tokelau' },
+            { code: 'rar', speech: 'rar', name: 'Tiếng Maori Quần đảo Cook' },
+            { code: 'wls', speech: 'wls', name: 'Tiếng Wallis' },
+            { code: 'fud', speech: 'fud', name: 'Tiếng Futuna' },
+            { code: 'pau', speech: 'pau', name: 'Tiếng Palau' },
+            { code: 'kos', speech: 'kos', name: 'Tiếng Kosrae' },
+            { code: 'pon', speech: 'pon', name: 'Tiếng Pohnpei' },
+            { code: 'yap', speech: 'yap', name: 'Tiếng Yap' },
+            { code: 'zdj', speech: 'zdj', name: 'Tiếng Comoros (Ngazidja)' },
+            { code: 'wni', speech: 'wni', name: 'Tiếng Comoros (Ndzwani)' },
+            { code: 'byn', speech: 'byn', name: 'Tiếng Blin' },
+            { code: 'tig', speech: 'tig', name: 'Tiếng Tigre' },
+            { code: 'wal', speech: 'wal', name: 'Tiếng Wolaytta' },
+            { code: 'sid', speech: 'sid', name: 'Tiếng Sidamo' },
+            { code: 'gez', speech: 'gez', name: 'Tiếng Ge’ez' },
+            { code: 'kmb', speech: 'kmb', name: 'Tiếng Kimbundu' },
+            { code: 'umb', speech: 'umb', name: 'Tiếng Umbundu' },
+            { code: 'kj', speech: 'kj', name: 'Tiếng Kuanyama' },
+            { code: 'ng', speech: 'ng', name: 'Tiếng Ndonga' },
+            { code: 'hz', speech: 'hz', name: 'Tiếng Herero' },
+            { code: 'loz', speech: 'loz', name: 'Tiếng Lozi' },
+            { code: 'toi', speech: 'toi', name: 'Tiếng Tonga (Zambia)' },
+            { code: 'nyn', speech: 'nyn', name: 'Tiếng Nyankole' },
+            { code: 'xog', speech: 'xog', name: 'Tiếng Soga' },
+            { code: 'teo', speech: 'teo', name: 'Tiếng Teso' },
+            { code: 'ach-UG', speech: 'ach', name: 'Tiếng Acholi (Uganda)' },
+            { code: 'lgg', speech: 'lgg', name: 'Tiếng Lugbara' },
+            { code: 'kam', speech: 'kam', name: 'Tiếng Kamba' },
+            { code: 'ki', speech: 'ki', name: 'Tiếng Kikuyu' },
+            { code: 'mer', speech: 'mer', name: 'Tiếng Meru' },
+            { code: 'mas', speech: 'mas', name: 'Tiếng Maasai' },
+            { code: 'sbp', speech: 'sbp', name: 'Tiếng Sangu' },
+            { code: 'suk', speech: 'suk', name: 'Tiếng Sukuma' },
+            { code: 'nym', speech: 'nym', name: 'Tiếng Nyamwezi' },
+            { code: 'yao', speech: 'yao', name: 'Tiếng Yao' },
+            { code: 'mak-MZ', speech: 'vmw', name: 'Tiếng Makhuwa' },
+            { code: 'sena', speech: 'seh', name: 'Tiếng Sena' },
+            { code: 'nd', speech: 'nd', name: 'Tiếng Ndebele (Bắc)' },
+            { code: 'kck', speech: 'kck', name: 'Tiếng Kalanga' },
+            { code: 'nbl', speech: 'nr', name: 'Tiếng IsiNdebele' },
+            { code: 'bax', speech: 'bax', name: 'Tiếng Bamun' },
+            { code: 'dua', speech: 'dua', name: 'Tiếng Duala' },
+            { code: 'ewo', speech: 'ewo', name: 'Tiếng Ewondo' },
+            { code: 'bas', speech: 'bas', name: 'Tiếng Basaa' },
+            { code: 'bbj', speech: 'bbj', name: 'Tiếng Ghomala' },
+            { code: 'byv', speech: 'byv', name: 'Tiếng Medumba' },
+            { code: 'fan', speech: 'fan', name: 'Tiếng Fang' },
+            { code: 'mye', speech: 'mye', name: 'Tiếng Myene' },
+            { code: 'kab', speech: 'kab', name: 'Tiếng Kabyle' },
+            { code: 'shi', speech: 'shi', name: 'Tiếng Tachelhit' },
+            { code: 'tzm', speech: 'tzm', name: 'Tiếng Tamazight (Trung Atlas)' },
+            { code: 'rif', speech: 'rif', name: 'Tiếng Riffian' },
+            { code: 'zgh', speech: 'zgh', name: 'Tiếng Tamazight Chuẩn Maroc' },
+            { code: 'aeb', speech: 'aeb', name: 'Tiếng Ả Rập Tunisia' },
+            { code: 'arq', speech: 'arq', name: 'Tiếng Ả Rập Algeria' },
+            { code: 'ary', speech: 'ary', name: 'Tiếng Ả Rập Maroc' },
+            { code: 'arz', speech: 'arz', name: 'Tiếng Ả Rập Ai Cập (Bản địa)' },
+            { code: 'apc', speech: 'apc', name: 'Tiếng Ả Rập Levant' },
+            { code: 'afb', speech: 'afb', name: 'Tiếng Ả Rập Vùng Vịnh' },
+            { code: 'acw', speech: 'acw', name: 'Tiếng Ả Rập Hijazi' },
+            { code: 'sc', speech: 'sc', name: 'Tiếng Sardinia' },
+            { code: 'fur-IT', speech: 'fur', name: 'Tiếng Friulian (Ý)' },
+            { code: 'lld', speech: 'lld', name: 'Tiếng Ladin' },
+            { code: 'rm', speech: 'rm-CH', name: 'Tiếng Romansh' },
+            { code: 'wa', speech: 'wa', name: 'Tiếng Walloon' },
+            { code: 'pcd', speech: 'pcd', name: 'Tiếng Picard' },
+            { code: 'gsw', speech: 'gsw', name: 'Tiếng Đức Thụy Sĩ' },
+            { code: 'bar', speech: 'bar', name: 'Tiếng Bavaria' },
+            { code: 'ksh', speech: 'ksh', name: 'Tiếng Colognian' },
+            { code: 'nds', speech: 'nds', name: 'Tiếng Hạ Đức' },
+            { code: 'frr', speech: 'frr', name: 'Tiếng Bắc Frisia' },
+            { code: 'stq', speech: 'stq', name: 'Tiếng Saterland Frisia' },
+            { code: 'hsb', speech: 'hsb', name: 'Tiếng Thượng Sorbia' },
+            { code: 'dsb', speech: 'dsb', name: 'Tiếng Hạ Sorbia' },
+            { code: 'csb', speech: 'csb', name: 'Tiếng Kashubia' },
+            { code: 'rue', speech: 'rue', name: 'Tiếng Rusyn' },
+            { code: 'ast', speech: 'ast', name: 'Tiếng Asturias' },
+            { code: 'an', speech: 'an', name: 'Tiếng Aragon' },
+            { code: 'ext', speech: 'ext', name: 'Tiếng Extremadura' },
+            { code: 'mwl', speech: 'mwl', name: 'Tiếng Miranda' },
+            { code: 'lad', speech: 'lad', name: 'Tiếng Ladino' },
+            { code: 'gv-IM', speech: 'gv', name: 'Tiếng Manx (Đảo Man)' },
+            { code: 'kw', speech: 'kw', name: 'Tiếng Cornwall' },
+            { code: 'sco', speech: 'sco', name: 'Tiếng Scots' },
+            { code: 'ulst', speech: 'en-GB', name: 'Tiếng Ulster Scots' },
+            { code: 'smn', speech: 'smn', name: 'Tiếng Inari Sami' },
+            { code: 'sms', speech: 'sms', name: 'Tiếng Skolt Sami' },
+            { code: 'smj', speech: 'smj', name: 'Tiếng Lule Sami' },
+            { code: 'sma', speech: 'sma', name: 'Tiếng Nam Sami' },
+            { code: 'krl', speech: 'krl', name: 'Tiếng Karelia' },
+            { code: 'vep', speech: 'vep', name: 'Tiếng Veps' },
+            { code: 'izh', speech: 'izh', name: 'Tiếng Ingria' },
+            { code: 'vot', speech: 'vot', name: 'Tiếng Votic' },
+            { code: 'liv', speech: 'liv', name: 'Tiếng Livonia' },
+            { code: 'myv', speech: 'myv', name: 'Tiếng Erzya' },
+            { code: 'mdf', speech: 'mdf', name: 'Tiếng Moksha' },
+            { code: 'mrj', speech: 'mrj', name: 'Tiếng Hill Mari' },
+            { code: 'koi', speech: 'koi', name: 'Tiếng Komi-Permyak' },
+            { code: 'kpv', speech: 'kpv', name: 'Tiếng Komi-Zyrian' },
+            { code: 'xal', speech: 'xal', name: 'Tiếng Kalmyk' },
+            { code: 'ady', speech: 'ady', name: 'Tiếng Adyghe' },
+            { code: 'kbd', speech: 'kbd', name: 'Tiếng Kabardia' },
+            { code: 'krc', speech: 'krc', name: 'Tiếng Karachay-Balkar' },
+            { code: 'kum', speech: 'kum', name: 'Tiếng Kumyk' },
+            { code: 'nog', speech: 'nog', name: 'Tiếng Nogai' },
+            { code: 'inh', speech: 'inh', name: 'Tiếng Ingush' },
+            { code: 'lbe', speech: 'lbe', name: 'Tiếng Lak' },
+            { code: 'dar', speech: 'dar', name: 'Tiếng Dargwa' },
+            { code: 'lez', speech: 'lez', name: 'Tiếng Lezgi' },
+            { code: 'tab', speech: 'tab', name: 'Tiếng Tabasaran' },
+            { code: 'alt', speech: 'alt', name: 'Tiếng Nam Altai' },
+            { code: 'kjh', speech: 'kjh', name: 'Tiếng Khakas' },
+            { code: 'kaa', speech: 'kaa', name: 'Tiếng Karakalpak' },
+            { code: 'ota', speech: 'tr', name: 'Tiếng Thổ Nhĩ Kỳ Ottoman' },
+            { code: 'gag', speech: 'gag', name: 'Tiếng Gagauz' },
+            { code: 'az-IR', speech: 'az', name: 'Tiếng Nam Azerbaijan' },
+            { code: 'glk', speech: 'glk', name: 'Tiếng Gilaki' },
+            { code: 'mzn', speech: 'mzn', name: 'Tiếng Mazanderani' },
+            { code: 'lrc', speech: 'lrc', name: 'Tiếng Bắc Luri' },
+            { code: 'luz', speech: 'luz', name: 'Tiếng Nam Luri' },
+            { code: 'bqi', speech: 'bqi', name: 'Tiếng Bakhtiari' },
+            { code: 'tly', speech: 'tly', name: 'Tiếng Talysh' },
+            { code: 'hac', speech: 'hac', name: 'Tiếng Gorani' },
+            { code: 'zza', speech: 'zza', name: 'Tiếng Zaza' },
+            { code: 'syr', speech: 'syr', name: 'Tiếng Syriac' },
+            { code: 'arc', speech: 'arc', name: 'Tiếng Aramaic' },
+            { code: 'uga', speech: 'uga', name: 'Tiếng Ugarit' },
+            { code: 'phn', speech: 'phn', name: 'Tiếng Phoenicia' },
+            { code: 'cop', speech: 'cop', name: 'Tiếng Copt' },
+            { code: 'non', speech: 'is', name: 'Tiếng Bắc Âu Cổ' },
+            { code: 'ang', speech: 'en', name: 'Tiếng Anh Cổ' },
+            { code: 'fro', speech: 'fr', name: 'Tiếng Pháp Cổ' },
+            { code: 'goh', speech: 'de', name: 'Tiếng Thượng Đức Cổ' },
+            { code: 'chu', speech: 'bg', name: 'Tiếng Slav Giáo hội Cổ' },
+            { code: 'pli', speech: 'pi', name: 'Tiếng Pali' },
+            { code: 'pra', speech: 'sa', name: 'Tiếng Prakrit' },
+            { code: 'new-NP', speech: 'new', name: 'Tiếng Newar Cổ điển' },
+            { code: 'nan', speech: 'zh-TW', name: 'Tiếng Mân Nam (Đài Loan)' },
+            { code: 'wuu', speech: 'zh-CN', name: 'Tiếng Ngô (Thượng Hải)' },
+            { code: 'hak', speech: 'zh-TW', name: 'Tiếng Khách Gia (Hakka)' },
+            { code: 'cdo', speech: 'zh-CN', name: 'Tiếng Mân Đông' },
+            { code: 'gan', speech: 'zh-CN', name: 'Tiếng Cám' },
+            { code: 'hsn', speech: 'zh-CN', name: 'Tiếng Tương' },
+            { code: 'ryu', speech: 'ja-JP', name: 'Tiếng Okinawa (Ryukyu)' },
+            { code: 'ain', speech: 'ain', name: 'Tiếng Ainu' },
+            { code: 'jbo', speech: 'jbo', name: 'Tiếng Lojban' },
+            { code: 'ia', speech: 'ia', name: 'Tiếng Interlingua' },
+            { code: 'ie', speech: 'ie', name: 'Tiếng Interlingue' },
+            { code: 'vo', speech: 'vo', name: 'Tiếng Volapük' },
+            { code: 'io', speech: 'io', name: 'Tiếng Ido' },
+            { code: 'nov', speech: 'nov', name: 'Tiếng Novial' },
+            { code: 'tlh', speech: 'tlh', name: 'Tiếng Klingon' },
+            { code: 'nv', speech: 'nv', name: 'Tiếng Navajo' },
+            { code: 'chr', speech: 'chr', name: 'Tiếng Cherokee' },
+            { code: 'oj', speech: 'oj', name: 'Tiếng Ojibwe' },
+            { code: 'cr', speech: 'cr', name: 'Tiếng Cree' },
+            { code: 'dak', speech: 'dak', name: 'Tiếng Dakota' },
+            { code: 'lkt', speech: 'lkt', name: 'Tiếng Lakota' },
+            { code: 'cho', speech: 'cho', name: 'Tiếng Choctaw' },
+            { code: 'mus', speech: 'mus', name: 'Tiếng Muscogee (Creek)' },
+            { code: 'arn', speech: 'arn', name: 'Tiếng Mapuche (Mapudungun)' },
+            { code: 'way', speech: 'way', name: 'Tiếng Wayana' },
+            { code: 'gug', speech: 'gn', name: 'Tiếng Guarani Paraguay' }
+        ];
+
+        /**
+         * KHỞI TẠO CÁC BIẾN VÀ PHẦN TỬ DOM
+         */
+        let currentSourceLang = 'en';
+        let currentTargetLang = 'vi';
+
+        const sourceLangBtn = document.getElementById('sourceLangBtn');
+        const sourceLangLabel = document.getElementById('sourceLangLabel');
+        const sourceLangDropdown = document.getElementById('sourceLangDropdown');
+        const sourceLangSearch = document.getElementById('sourceLangSearch');
+        const sourceLangList = document.getElementById('sourceLangList');
+
+        const targetLangBtn = document.getElementById('targetLangBtn');
+        const targetLangLabel = document.getElementById('targetLangLabel');
+        const targetLangDropdown = document.getElementById('targetLangDropdown');
+        const targetLangSearch = document.getElementById('targetLangSearch');
+        const targetLangList = document.getElementById('targetLangList');
+
+        const swapBtn = document.getElementById('swapBtn');
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const clearBtn = document.getElementById('clearBtn');
+        const micBtn = document.getElementById('micBtn');
+        const recordingStatus = document.getElementById('recordingStatus');
+        const speakSourceBtn = document.getElementById('speakSourceBtn');
+        const speakTargetBtn = document.getElementById('speakTargetBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const charCount = document.getElementById('charCount');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const toastBox = document.getElementById('toastBox');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+
+        let currentTranslatedText = '';
+        let typingTimer = null;
+        let isRecording = false;
+        let recognition = null;
+        let availableVoices = [];
+
+        // Biến quản lý trạng thái phát âm thanh ("Chị Google" đa tầng)
+        let isSpeaking = false;
+        let activeSpeakBtn = null;
+        let currentAudioElement = null;
+        let speechSessionId = 0;
+
+        /**
+         * QUẢN LÝ BỘ CHỌN 249 NGÔN NGỮ + TÌM KIẾM NHANH
+         */
+        function getLangObj(code) {
+            return ALL_LANGUAGES.find(l => l.code === code) || ALL_LANGUAGES[0];
+        }
+
+        function removeAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        function renderLanguageList(type, filterText = '') {
+            const listEl = type === 'source' ? sourceLangList : targetLangList;
+            const selectedCode = type === 'source' ? currentSourceLang : currentTargetLang;
+            const query = removeAccents(filterText.trim());
+
+            listEl.innerHTML = '';
+
+            const filtered = ALL_LANGUAGES.filter(lang => {
+                if (!query) return true;
+                return removeAccents(lang.name).includes(query) || lang.code.toLowerCase().includes(query);
+            });
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = '<div class="p-4 text-center text-gray-400 text-xs">Không tìm thấy ngôn ngữ phù hợp</div>';
+                return;
+            }
+
+            if (!query) {
+                // Nhóm phổ biến ở trên cùng
+                const popHeader = document.createElement('div');
+                popHeader.className = 'px-3 py-1.5 bg-blue-50/70 text-[11px] font-bold uppercase tracking-wider text-blue-600 sticky top-0';
+                popHeader.textContent = 'Ngôn ngữ phổ biến';
+                listEl.appendChild(popHeader);
+
+                POPULAR_CODES.forEach(code => {
+                    const lang = getLangObj(code);
+                    listEl.appendChild(createLangOptionItem(lang, selectedCode, type));
+                });
+
+                // Nhóm tất cả 249 ngôn ngữ theo A-Z
+                const allHeader = document.createElement('div');
+                allHeader.className = 'px-3 py-1.5 bg-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-500 sticky top-0';
+                allHeader.textContent = `Tất cả ngôn ngữ (${ALL_LANGUAGES.length})`;
+                listEl.appendChild(allHeader);
+
+                const sortedOthers = [...ALL_LANGUAGES]
+                    .filter(l => !POPULAR_CODES.includes(l.code))
+                    .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+
+                sortedOthers.forEach(lang => {
+                    listEl.appendChild(createLangOptionItem(lang, selectedCode, type));
+                });
+            } else {
+                filtered.forEach(lang => {
+                    listEl.appendChild(createLangOptionItem(lang, selectedCode, type));
+                });
+            }
+        }
+
+        function createLangOptionItem(lang, selectedCode, type) {
+            const isSelected = lang.code === selectedCode;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `w-full text-left px-3.5 py-2.5 flex items-center justify-between hover:bg-blue-50 transition ${isSelected ? 'bg-blue-50/90 text-blue-700 font-semibold' : 'text-gray-700'}`;
+            btn.innerHTML = `
+                <span class="truncate pr-2">${lang.name}</span>
+                ${isSelected ? '<i class="fa-solid fa-check text-blue-600 text-xs flex-shrink-0"></i>' : ''}
+            `;
+            btn.addEventListener('click', () => {
+                setLanguage(type, lang.code);
+                closeAllDropdowns();
+            });
+            return btn;
+        }
+
+        function setLanguage(type, code) {
+            const lang = getLangObj(code);
+            if (type === 'source') {
+                currentSourceLang = lang.code;
+                sourceLangLabel.textContent = lang.name;
+                if (isRecording) stopSpeechRecognition();
+            } else {
+                currentTargetLang = lang.code;
+                targetLangLabel.textContent = lang.name;
+            }
+            stopAllSpeech();
+            if (inputText.value.trim()) translateText();
+        }
+
+        function closeAllDropdowns() {
+            sourceLangDropdown.classList.add('hidden');
+            targetLangDropdown.classList.add('hidden');
+        }
+
+        sourceLangBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = sourceLangDropdown.classList.contains('hidden');
+            closeAllDropdowns();
+            if (isHidden) {
+                sourceLangSearch.value = '';
+                renderLanguageList('source');
+                sourceLangDropdown.classList.remove('hidden');
+                setTimeout(() => sourceLangSearch.focus(), 50);
+            }
+        });
+
+        targetLangBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = targetLangDropdown.classList.contains('hidden');
+            closeAllDropdowns();
+            if (isHidden) {
+                targetLangSearch.value = '';
+                renderLanguageList('target');
+                targetLangDropdown.classList.remove('hidden');
+                setTimeout(() => targetLangSearch.focus(), 50);
+            }
+        });
+
+        sourceLangSearch.addEventListener('input', (e) => renderLanguageList('source', e.target.value));
+        targetLangSearch.addEventListener('input', (e) => renderLanguageList('target', e.target.value));
+        sourceLangDropdown.addEventListener('click', (e) => e.stopPropagation());
+        targetLangDropdown.addEventListener('click', (e) => e.stopPropagation());
+        document.addEventListener('click', closeAllDropdowns);
+
+        // Khởi tạo nhãn ngôn ngữ mặc định
+        setLanguage('source', 'en');
+        setLanguage('target', 'vi');
+
+        /**
+         * HIỂN THỊ THÔNG BÁO TOAST (THAY THẾ CHO ALERT)
+         */
+        let toastTimeout;
+        function showToast(message, type = 'info') {
+            toastMessage.textContent = message;
+            if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400';
+            } else if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-green-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-blue-400';
+            }
+
+            toastBox.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastBox.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        /**
+         * CẬP NHẬT TRẠNG THÁI GIAO DIỆN KHI VĂN BẢN THAY ĐỔI
+         */
+        function updateUIState() {
+            const text = inputText.value;
+            charCount.textContent = text.length.toLocaleString('vi-VN');
+
+            // Hiển thị hoặc ẩn nút dấu "X" xóa nhanh
+            if (text.length > 0) {
+                clearBtn.classList.remove('hidden');
+                speakSourceBtn.disabled = false;
+            } else {
+                clearBtn.classList.add('hidden');
+                speakSourceBtn.disabled = true;
+                resetOutput();
+            }
+        }
+
+        /**
+         * ĐẶT LẠI KHUNG BẢN DỊCH VỀ TRẠNG THÁI RỖNG
+         */
+        function resetOutput() {
+            currentTranslatedText = '';
+            outputText.innerHTML = '<span class="text-gray-400 select-none">Bản dịch sẽ hiển thị tại đây...</span>';
+            speakTargetBtn.disabled = true;
+            copyBtn.disabled = true;
+            loadingIndicator.classList.add('hidden');
+            loadingIndicator.classList.remove('flex');
+        }
+
+        /**
+         * CHỨC NĂNG DỊCH TỰ ĐỘNG (SỬ DỤNG GOOGLE GTX ENDPOINT + FALLBACK MYMEMORY API)
+         */
+        async function translateText() {
+            const text = inputText.value.trim();
+            if (!text) {
+                resetOutput();
+                return;
+            }
+
+            const sourceLang = currentSourceLang;
+            const targetLang = currentTargetLang;
+
+            // Nếu 2 ngôn ngữ giống hệt nhau thì giữ nguyên văn bản
+            if (sourceLang === targetLang) {
+                currentTranslatedText = text;
+                outputText.textContent = currentTranslatedText;
+                speakTargetBtn.disabled = false;
+                copyBtn.disabled = false;
+                return;
+            }
+
+            loadingIndicator.classList.remove('hidden');
+            loadingIndicator.classList.add('flex');
+
+            try {
+                // Ưu tiên 1: Google Translate Free GTX API
+                const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(sourceLang)}&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(text)}`;
+                const response = await fetch(gtxUrl);
+                
+                if (!response.ok) throw new Error('GTX API lỗi');
+                
+                const data = await response.json();
+                if (data && data[0]) {
+                    currentTranslatedText = data[0].map(item => item[0]).join('');
+                } else {
+                    throw new Error('Dữ liệu GTX không hợp lệ');
+                }
+            } catch (err) {
+                // Fallback: MyMemory Translation API nếu GTX bị chặn mạng
+                try {
+                    const mmLangPair = `${sourceLang}|${targetLang}`;
+                    const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${encodeURIComponent(mmLangPair)}`;
+                    const mmRes = await fetch(mmUrl);
+                    const mmData = await mmRes.json();
+                    
+                    if (mmData && mmData.responseData && mmData.responseData.translatedText) {
+                        currentTranslatedText = mmData.responseData.translatedText;
+                    } else {
+                        throw new Error('MyMemory lỗi');
+                    }
+                } catch (fallbackErr) {
+                    loadingIndicator.classList.add('hidden');
+                    loadingIndicator.classList.remove('flex');
+                    showToast('Không thể kết nối máy chủ dịch. Vui lòng kiểm tra mạng!', 'error');
+                    return;
+                }
+            }
+
+            // Hiển thị kết quả lên khung bên phải
+            loadingIndicator.classList.add('hidden');
+            loadingIndicator.classList.remove('flex');
+            outputText.textContent = currentTranslatedText;
+            speakTargetBtn.disabled = !currentTranslatedText;
+            copyBtn.disabled = !currentTranslatedText;
+        }
+
+        // Lắng nghe sự kiện gõ phím với độ trễ (debounce 400ms) để dịch thời gian thực
+        inputText.addEventListener('input', () => {
+            updateUIState();
+            clearTimeout(typingTimer);
+            if (inputText.value.trim()) {
+                typingTimer = setTimeout(translateText, 400);
+            }
+        });
+
+        /**
+         * NÚT DẤU "X" XÓA NHANH VĂN BẢN GỐC & BẢN DỊCH
+         */
+        clearBtn.addEventListener('click', () => {
+            stopAllSpeech();
+            if (isRecording) stopSpeechRecognition();
+            inputText.value = '';
+            updateUIState();
+            inputText.focus();
+        });
+
+        /**
+         * NÚT ĐẢO CHIỀU NGÔN NGỮ & HOÁN ĐỔI NỘI DUNG
+         */
+        swapBtn.addEventListener('click', () => {
+            stopAllSpeech();
+            if (isRecording) stopSpeechRecognition();
+
+            const tempLang = currentSourceLang;
+            setLanguage('source', currentTargetLang);
+            setLanguage('target', tempLang);
+
+            const icon = swapBtn.querySelector('i');
+            icon.style.transform = icon.style.transform === 'rotate(180deg)' ? 'rotate(0deg)' : 'rotate(180deg)';
+            icon.style.transition = 'transform 0.3s ease';
+
+            if (currentTranslatedText) {
+                inputText.value = currentTranslatedText;
+                updateUIState();
+                translateText();
+            }
+        });
+
+        /**
+         * TÍNH NĂNG 3: NHẬN DIỆN GIỌNG NÓI QUA MICRO (WEB SPEECH API - SPEECHRECOGNITION)
+         */
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isRecording = true;
+                micBtn.classList.add('mic-recording');
+                recordingStatus.classList.remove('hidden');
+                recordingStatus.classList.add('flex');
+                stopAllSpeech();
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                inputText.value = transcript;
+                updateUIState();
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Lỗi SpeechRecognition:', event.error);
+                if (event.error === 'not-allowed') {
+                    showToast('Vui lòng cấp quyền truy cập Micro trên trình duyệt!', 'error');
+                } else if (event.error === 'no-speech') {
+                    showToast('Không nghe thấy giọng nói nào. Hãy thử nói lại!', 'info');
+                } else {
+                    showToast('Lỗi nhận diện giọng nói: ' + event.error, 'error');
+                }
+                stopSpeechRecognition();
+            };
+
+            recognition.onend = () => {
+                stopSpeechRecognition();
+                if (inputText.value.trim()) {
+                    translateText();
+                }
+            };
+        }
+
+        function stopSpeechRecognition() {
+            isRecording = false;
+            micBtn.classList.remove('mic-recording');
+            recordingStatus.classList.add('hidden');
+            recordingStatus.classList.remove('flex');
+            if (recognition) {
+                try { recognition.stop(); } catch (e) {}
+            }
+        }
+
+        micBtn.addEventListener('click', () => {
+            if (!SpeechRecognition) {
+                showToast('Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Hãy dùng Chrome hoặc Edge!', 'error');
+                return;
+            }
+
+            if (isRecording) {
+                stopSpeechRecognition();
+            } else {
+                const langObj = getLangObj(currentSourceLang);
+                recognition.lang = langObj.speech || currentSourceLang;
+                try {
+                    recognition.start();
+                } catch (e) {
+                    stopSpeechRecognition();
+                }
+            }
+        });
+
+        /**
+         * TÍNH NĂNG 4: BỘ MÁY GIỌNG ĐỌC "CHỊ GOOGLE" ĐA TẦNG - RÕ TỪNG CHỮ, NGẮT CÂU THÔNG MINH
+         */
+        function loadVoices() {
+            if ('speechSynthesis' in window) {
+                availableVoices = window.speechSynthesis.getVoices();
+            }
+        }
+        loadVoices();
+        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function stopAllSpeech() {
+            speechSessionId++;
+            isSpeaking = false;
+            activeSpeakBtn = null;
+
+            if (currentAudioElement) {
+                try {
+                    currentAudioElement.pause();
+                    currentAudioElement.src = '';
+                } catch (e) {}
+                currentAudioElement = null;
+            }
+
+            if ('speechSynthesis' in window) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
+
+            document.querySelectorAll('.speaking-active').forEach(el => el.classList.remove('speaking-active'));
+        }
+
+        function splitTextIntoChunks(text, maxLen = 165) {
+            const cleanText = text.replace(/\s+/g, ' ').trim();
+            if (!cleanText) return [];
+
+            const rawSentences = cleanText.match(/[^.!?;:。！？；：\n]+[.!?;:。！？；：\n]*/g) || [cleanText];
+            const chunks = [];
+
+            for (let sentence of rawSentences) {
+                sentence = sentence.trim();
+                if (!sentence) continue;
+
+                if (sentence.length <= maxLen) {
+                    chunks.push(sentence);
+                } else {
+                    const subParts = sentence.split(/([,，、])/);
+                    let buffer = '';
+                    for (const part of subParts) {
+                        if ((buffer + part).length <= maxLen) {
+                            buffer += part;
+                        } else {
+                            if (buffer.trim()) chunks.push(buffer.trim());
+                            if (part.length <= maxLen) {
+                                buffer = part;
+                            } else {
+                                const words = part.split(' ');
+                                let wordBuf = '';
+                                for (const w of words) {
+                                    if ((wordBuf + ' ' + w).trim().length <= maxLen) {
+                                        wordBuf = (wordBuf + ' ' + w).trim();
+                                    } else {
+                                        if (wordBuf) chunks.push(wordBuf);
+                                        wordBuf = w;
+                                    }
+                                }
+                                buffer = wordBuf;
+                            }
+                        }
+                    }
+                    if (buffer.trim()) chunks.push(buffer.trim());
+                }
+            }
+            return chunks;
+        }
+
+        function playGoogleTTSChunk(chunk, ttsLang, sessionId) {
+            return new Promise((resolve, reject) => {
+                if (sessionId !== speechSessionId) return reject('cancelled');
+
+                const encoded = encodeURIComponent(chunk);
+                const endpoints = [
+                    `https://translate.googleapis.com/translate_tts?ie=UTF-8&q=${encoded}&tl=${encodeURIComponent(ttsLang)}&client=gtx&ttsspeed=0.95`,
+                    `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=${encodeURIComponent(ttsLang)}&client=tw-ob`
+                ];
+
+                let epIndex = 0;
+                function tryEndpoint() {
+                    if (sessionId !== speechSessionId) return reject('cancelled');
+                    if (epIndex >= endpoints.length) return reject('google_tts_failed');
+
+                    const audio = new Audio();
+                    audio.crossOrigin = 'anonymous';
+                    audio.preload = 'auto';
+                    audio.playbackRate = 0.96;
+                    currentAudioElement = audio;
+
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if (!settled) {
+                            settled = true;
+                            audio.pause();
+                            epIndex++;
+                            tryEndpoint();
+                        }
+                    }, 3500);
+
+                    audio.oncanplaythrough = () => {
+                        clearTimeout(timeoutId);
+                        if (sessionId !== speechSessionId) {
+                            audio.pause();
+                            return reject('cancelled');
+                        }
+                        audio.play().catch(() => {
+                            if (!settled) {
+                                settled = true;
+                                epIndex++;
+                                tryEndpoint();
+                            }
+                        });
+                    };
+
+                    audio.onended = () => {
+                        clearTimeout(timeoutId);
+                        if (!settled) {
+                            settled = true;
+                            setTimeout(() => resolve(), 140);
+                        }
+                    };
+
+                    audio.onerror = () => {
+                        clearTimeout(timeoutId);
+                        if (!settled) {
+                            settled = true;
+                            epIndex++;
+                            tryEndpoint();
+                        }
+                    };
+
+                    audio.src = endpoints[epIndex];
+                }
+
+                tryEndpoint();
+            });
+        }
+
+        function playWebSpeechChunks(chunks, speechLangCode, sessionId) {
+            return new Promise((resolve, reject) => {
+                if (!('speechSynthesis' in window)) return reject('no_web_speech');
+
+                if (availableVoices.length === 0) loadVoices();
+                const langPrefix = speechLangCode.split('-')[0].toLowerCase();
+
+                const preferredVoice =
+                    availableVoices.find(v => v.lang.toLowerCase() === speechLangCode.toLowerCase() && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online'))) ||
+                    availableVoices.find(v => v.lang.toLowerCase().startsWith(langPrefix) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Online'))) ||
+                    availableVoices.find(v => v.lang.toLowerCase() === speechLangCode.toLowerCase()) ||
+                    availableVoices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
+
+                let idx = 0;
+                function speakNext() {
+                    if (sessionId !== speechSessionId) return reject('cancelled');
+                    if (idx >= chunks.length) return resolve();
+
+                    const utterance = new SpeechSynthesisUtterance(chunks[idx]);
+                    utterance.lang = speechLangCode;
+                    utterance.rate = 0.92;
+                    utterance.pitch = 1.02;
+                    if (preferredVoice) utterance.voice = preferredVoice;
+
+                    utterance.onend = () => {
+                        idx++;
+                        setTimeout(speakNext, 130);
+                    };
+
+                    utterance.onerror = (e) => {
+                        if (e.error === 'interrupted' || e.error === 'canceled') {
+                            reject('cancelled');
+                        } else {
+                            idx++;
+                            speakNext();
+                        }
+                    };
+
+                    window.speechSynthesis.speak(utterance);
+                }
+
+                speakNext();
+            });
+        }
+
+        async function speakText(text, langCode, buttonElement) {
+            if (!text) return;
+
+            if (isSpeaking && activeSpeakBtn === buttonElement) {
+                stopAllSpeech();
+                return;
+            }
+
+            stopAllSpeech();
+            const mySession = ++speechSessionId;
+            isSpeaking = true;
+            activeSpeakBtn = buttonElement;
+            buttonElement.classList.add('speaking-active');
+
+            const langObj = getLangObj(langCode);
+            const ttsLang = langObj.code;
+            const speechLangCode = langObj.speech || langObj.code;
+            const chunks = splitTextIntoChunks(text, 165);
+
+            try {
+                for (let i = 0; i < chunks.length; i++) {
+                    if (mySession !== speechSessionId) return;
+                    await playGoogleTTSChunk(chunks[i], ttsLang, mySession);
+                }
+            } catch (err) {
+                if (err === 'cancelled' || mySession !== speechSessionId) return;
+
+                try {
+                    await playWebSpeechChunks(chunks, speechLangCode, mySession);
+                } catch (wsErr) {
+                    if (wsErr !== 'cancelled') {
+                        showToast('Trình duyệt chưa hỗ trợ giọng đọc cho ngôn ngữ này.', 'info');
+                    }
+                }
+            } finally {
+                if (mySession === speechSessionId) {
+                    stopAllSpeech();
+                }
+            }
+        }
+
+        // Bấm loa ở khung văn bản gốc
+        speakSourceBtn.addEventListener('click', () => {
+            const text = inputText.value.trim();
+            speakText(text, currentSourceLang, speakSourceBtn);
+        });
+
+        // Bấm loa ở khung bản dịch ("Giọng chị Google")
+        speakTargetBtn.addEventListener('click', () => {
+            if (!currentTranslatedText) return;
+            speakText(currentTranslatedText, currentTargetLang, speakTargetBtn);
+        });
+
+        /**
+         * SAO CHÉP KẾT QUẢ DỊCH VÀO CLIPBOARD
+         */
+        copyBtn.addEventListener('click', () => {
+            if (!currentTranslatedText) return;
+
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = currentTranslatedText;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Đã sao chép bản dịch vào bộ nhớ tạm!', 'success');
+            } catch (err) {
+                showToast('Không thể sao chép văn bản.', 'error');
+            }
+            document.body.removeChild(tempTextarea);
+        });
+
+        /**
+         * XỬ LÝ CÁC NÚT CÂU MẪU NHANH
+         */
+        document.querySelectorAll('.sample-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                stopAllSpeech();
+                setLanguage('source', btn.getAttribute('data-src'));
+                setLanguage('target', btn.getAttribute('data-tgt'));
+                inputText.value = btn.getAttribute('data-text');
+                updateUIState();
+                translateText();
+            });
+        });
+    </script
+</div>
+</body>
+</html>
